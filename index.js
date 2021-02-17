@@ -25,7 +25,11 @@ let client = new Discord.Client({
 			type: "LISTENING",
 			name: `${config.prefix}help`
 		}
-	}
+	},
+	intents: [
+		Discord.Intents.FLAGS.GUILDS,
+		Discord.Intents.FLAGS.GUILD_MESSAGES,
+	]
 });
 
 if(!client.token) {
@@ -185,13 +189,10 @@ client.on("message", function (msg) {
 
 client.on("messageDelete", (msg) => {
 	if(msg.content.substr(0,config.prefix.length) === config.prefix) { // look for commands
-		msg.channel.messages.fetch({limit: 1, after: msg.id}).then(messages => {
-			if(messages.array().length == 0) return;
-			var botmsg = messages.array()[0];
-			if(msg.content.substr(0,config.prefix.length) === config.prefix && (botmsg.author.id == client.user.id)
-				&& (botmsg.mentions.users.has(msg.author.id))) {
-				botmsg.delete();
-			}
+		msg.channel.messages.fetch({after: msg.id}).then(messages => {
+			var botMessages = messages.filter(m => m.author.id == client.user.id && (m.reference.messageID === msg.id));
+			if(botMessages.array().length == 0) return;
+			var botmsg = botMessages.array()[0].delete();
 		}).catch(error => console.log(error));
 	}
 	// write to the server's delete log if it exists
